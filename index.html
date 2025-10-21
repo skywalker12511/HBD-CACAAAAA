@@ -17,7 +17,7 @@
 </head>
 
 <body>
-  <audio id="waveform" src="./img/Monokrom.mp3" preload="auto"></audio>
+  <audio id="waveform" src="./music/monokrom.mp3" preload="auto"></audio>
 
   <!-- play overlay: ditampilkan jika autoplay diblokir -->
   <button id="btnPlay" class="btn btn-primary" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;">
@@ -77,8 +77,11 @@
     </div>
     <p id="trims" class="text-muted d-none mt-2"></p>
 
-    <p id="tap" class="d-none animate__animated animate__pulse text-muted animate__slow animate__repeat-3">Ketuk untuk
-      melanjutkan</p>
+    <!-- pindah ketuk ke bawah layar agar tidak mengganggu (sedikit lebih naik ke tengah bawah) -->
+    <p id="tap" class="d-none animate__animated animate__pulse text-muted animate__slow animate__repeat-3"
+       style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9998;font-size:0.95rem;">
+      Ketuk untuk melanjutkan
+    </p>
     <!-- Footer -->
     <footer class="page-footer font-small blue fixed-bottom">
   <!-- Optional JavaScript -->
@@ -98,4 +101,3 @@
 </body>
 
 </html>
-
