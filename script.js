@@ -43,7 +43,7 @@ const _slideSatu = function () {
     document.body.addEventListener('click', function () {
       _slideDua();
     })
-  }, 7000);
+  }, 5000);
 };
 
 const _slideDua = function () {
@@ -71,7 +71,7 @@ const _slideDua = function () {
         _slideTiga();
       }, 1000);
     })
-  }, 40000);
+  }, 10000);
 };
 
 const _slideTiga = function () {
@@ -90,7 +90,7 @@ const _slideTiga = function () {
         _slideEmpat();
       }, 1000);
     })
-  }, 43000);
+  }, 7000);
 }
 
 function getRandomPosition(element) {
@@ -446,3 +446,4 @@ function confetti() {
 
   if (!onlyOnKonami) poof();
 };
+
