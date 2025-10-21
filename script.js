@@ -445,6 +445,4 @@ function confetti() {
   });
 
   if (!onlyOnKonami) poof();
-
 };
-
