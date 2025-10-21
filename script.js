@@ -1,12 +1,60 @@
 // Fungsi untuk memulai musik
-function _playMusic() {
-  const music = document.getElementById('background-music');
-  music.play();
+function playMusic() {
+    const audio = document.getElementById('waveform');
+    if (!audio) {
+        console.warn('Audio element #waveform not found — skipping play.');
+        return;
+    }
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch(err => {
+            console.warn('Autoplay prevented or failed:', err);
+            // fallback: show a "Play" button so user can start audio manually
+            // document.getElementById('btnPlay').classList.remove('d-none');
+        });
+    }
 }
-window.addEventListener('DOMContentLoaded', function() {
-  _playMusic();
+
+document.addEventListener('DOMContentLoaded', () => {
+    const audio = document.getElementById('waveform');
+    const btnPlay = document.getElementById('btnPlay');
+
+    if (!audio) {
+        console.warn('Audio element #waveform not found — skipping audio setup.');
+        if (btnPlay) btnPlay.classList.add('d-none');
+        return;
+    }
+
+    function removeGestureListeners() {
+        document.removeEventListener('click', onUserGesture);
+        document.removeEventListener('touchstart', onUserGesture);
+        if (btnPlay) btnPlay.removeEventListener('click', onUserGesture);
+    }
+
+    function onUserGesture() {
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                if (btnPlay) btnPlay.classList.add('d-none');
+                removeGestureListeners();
+            }).catch(err => {
+                console.warn('Autoplay prevented or failed:', err);
+                // tetap tampilkan tombol agar user bisa menekan manual
+                if (btnPlay) btnPlay.classList.remove('d-none');
+            });
+        } else {
+            // older browsers: anggap berhasil
+            if (btnPlay) btnPlay.classList.add('d-none');
+            removeGestureListeners();
+        }
+    }
+
+    // jika ada tombol, beri aksi; juga tangani touch/click di dokumen (sekali)
+    if (btnPlay) btnPlay.addEventListener('click', onUserGesture);
+    document.addEventListener('touchstart', onUserGesture, { once: true });
+    document.addEventListener('click', onUserGesture, { once: true });
 });
-document.body.addEventListener('click', _playMusic, { once: true });
+
 const content = document.getElementById('content');
 const footer = document.getElementsByTagName('footer')[0];
 const timer = document.getElementById('timer');
@@ -90,7 +138,7 @@ const _slideTiga = function () {
         _slideEmpat();
       }, 1000);
     })
-  }, 7000);
+  }, 8000);
 }
 
 function getRandomPosition(element) {
@@ -446,5 +494,4 @@ function confetti() {
 
   if (!onlyOnKonami) poof();
 };
-
 
