@@ -2,6 +2,7 @@
 let userInteracted = false;
 
 // Fungsi untuk memulai musik
+// Fungsi untuk memulai musik
 function playMusic() {
     const audio = document.getElementById('waveform');
     if (!audio) {
@@ -12,11 +13,8 @@ function playMusic() {
     if (playPromise && typeof playPromise.then === 'function') {
         playPromise.catch(err => {
             console.warn('Autoplay prevented or failed:', err);
-            // jangan tampilkan btnPlay kalau user sudah berinteraksi
-            if (!userInteracted) {
-                const btnPlay = document.getElementById('btnPlay');
-                if (btnPlay) btnPlay.classList.remove('d-none');
-            }
+            // fallback: show a "Play" button so user can start audio manually
+            // document.getElementById('btnPlay').classList.remove('d-none');
         });
     }
 }
@@ -38,23 +36,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function onUserGesture() {
-        userInteracted = true; // catat bahwa user sudah berinteraksi
         const playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
-                if (btnPlay) {
-                    // sembunyikan permanen (gunakan style agar tidak mudah muncul lagi)
-                    btnPlay.style.display = 'none';
-                }
+                if (btnPlay) btnPlay.classList.add('d-none');
                 removeGestureListeners();
             }).catch(err => {
                 console.warn('Autoplay prevented or failed:', err);
-                // jangan tampilkan tombol lagi jika user sudah berinteraksi
-                if (!userInteracted && btnPlay) btnPlay.classList.remove('d-none');
+                // tetap tampilkan tombol agar user bisa menekan manual
+                if (btnPlay) btnPlay.classList.remove('d-none');
             });
         } else {
             // older browsers: anggap berhasil
-            if (btnPlay) btnPlay.style.display = 'none';
+            if (btnPlay) btnPlay.classList.add('d-none');
             removeGestureListeners();
         }
     }
@@ -581,4 +575,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // bila perlu, lakukan aksi lain di sini (mis. feedback)
   }, { once: true });
 });
+
 
