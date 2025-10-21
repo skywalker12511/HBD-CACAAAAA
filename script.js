@@ -1,12 +1,12 @@
 // Fungsi untuk memulai musik
-function playMusic() {
+function _playMusic() {
   const music = document.getElementById('background-music');
   music.play();
 }
 window.addEventListener('DOMContentLoaded', function() {
-  playMusic();
+  _playMusic();
 });
-document.body.addEventListener('click', playMusic, { once: true });
+document.body.addEventListener('click', _playMusic, { once: true });
 const content = document.getElementById('content');
 const footer = document.getElementsByTagName('footer')[0];
 const timer = document.getElementById('timer');
@@ -446,4 +446,5 @@ function confetti() {
 
   if (!onlyOnKonami) poof();
 };
+
 
