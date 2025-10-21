@@ -1,3 +1,6 @@
+// tambahkan flag global agar btnPlay tidak muncul lagi setelah user sudah menekan
+let userInteracted = false;
+
 // Fungsi untuk memulai musik
 function playMusic() {
     const audio = document.getElementById('waveform');
@@ -9,8 +12,11 @@ function playMusic() {
     if (playPromise && typeof playPromise.then === 'function') {
         playPromise.catch(err => {
             console.warn('Autoplay prevented or failed:', err);
-            // fallback: show a "Play" button so user can start audio manually
-            // document.getElementById('btnPlay').classList.remove('d-none');
+            // jangan tampilkan btnPlay kalau user sudah berinteraksi
+            if (!userInteracted) {
+                const btnPlay = document.getElementById('btnPlay');
+                if (btnPlay) btnPlay.classList.remove('d-none');
+            }
         });
     }
 }
@@ -32,19 +38,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function onUserGesture() {
+        userInteracted = true; // catat bahwa user sudah berinteraksi
         const playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
-                if (btnPlay) btnPlay.classList.add('d-none');
+                if (btnPlay) {
+                    // sembunyikan permanen (gunakan style agar tidak mudah muncul lagi)
+                    btnPlay.style.display = 'none';
+                }
                 removeGestureListeners();
             }).catch(err => {
                 console.warn('Autoplay prevented or failed:', err);
-                // tetap tampilkan tombol agar user bisa menekan manual
-                if (btnPlay) btnPlay.classList.remove('d-none');
+                // jangan tampilkan tombol lagi jika user sudah berinteraksi
+                if (!userInteracted && btnPlay) btnPlay.classList.remove('d-none');
             });
         } else {
             // older browsers: anggap berhasil
-            if (btnPlay) btnPlay.classList.add('d-none');
+            if (btnPlay) btnPlay.style.display = 'none';
             removeGestureListeners();
         }
     }
@@ -88,9 +98,10 @@ const _slideSatu = function () {
   slideSatu.classList.remove('d-none');
   setTimeout(function () {
     tap.classList.remove('d-none');
+    // gunakan once supaya listener otomatis dihapus setelah dipanggil sekali
     document.body.addEventListener('click', function () {
       _slideDua();
-    })
+    }, { once: true });
   }, 5000);
 };
 
@@ -110,6 +121,7 @@ const _slideDua = function () {
   slideDua.classList.remove('d-none');
   setTimeout(function () {
     tap.classList.remove('d-none');
+    // sekali panggil lalu otomatis dihapus
     document.body.addEventListener('click', function () {
       slideDua.classList.replace('animate__zoomInDown', 'animate__fadeOutLeft');
       slideDua.classList.remove('animate__delay-2s', 'animate__slow');
@@ -118,7 +130,7 @@ const _slideDua = function () {
         slideDua.remove();
         _slideTiga();
       }, 1000);
-    })
+    }, { once: true });
   }, 10000);
 };
 
@@ -129,6 +141,7 @@ const _slideTiga = function () {
   slideTiga.classList.remove('d-none');
   setTimeout(function () {
     tap.classList.remove('d-none');
+    // sekali panggil lalu otomatis dihapus
     document.body.addEventListener('click', function () {
       slideTiga.classList.remove('animate__delay-2s', 'animate__slow');
       slideTiga.classList.replace('animate__fadeInRight', 'animate__fadeOut');
@@ -137,7 +150,7 @@ const _slideTiga = function () {
         slideTiga.remove();
         _slideEmpat();
       }, 1000);
-    })
+    }, { once: true });
   }, 8000);
 }
 
@@ -149,50 +162,93 @@ function getRandomPosition(element) {
   return [randomX, randomY];
 };
 
+// flag untuk mencegah teks "Terima kasih" tampil lebih dari sekali
+window.trimsShown = window.trimsShown || false;
+
 const _slideEmpat = function () {
   const slideEmpat = document.getElementById('slideEmpat');
-  const btn = document.getElementsByTagName('button');
+  const btnGak = document.getElementById('gak');
+  const btnSuka = document.getElementById('suka');
+
+  if (!slideEmpat || !btnGak || !btnSuka) return;
   slideEmpat.classList.remove('d-none');
 
-  btn[0].addEventListener('click', function () {
-    var xy = getRandomPosition(slideEmpat);
-    slideEmpat.style.top = xy[0] + 'px';
-    // slideEmpat.style.left = xy[1] + 'px';
+  // hapus listener lama dengan mengganti node supaya tidak doble-bind
+  const freshGak = btnGak.cloneNode(true);
+  const freshSuka = btnSuka.cloneNode(true);
+  btnGak.parentNode.replaceChild(freshGak, btnGak);
+  btnSuka.parentNode.replaceChild(freshSuka, btnSuka);
+
+  // set posisi relatif agar transform bekerja pada container
+  slideEmpat.style.position = slideEmpat.style.position || 'relative';
+  slideEmpat.style.transition = slideEmpat.style.transition || 'transform 0.35s ease, filter 0.35s ease, opacity 0.35s ease';
+
+  // perilaku tombol "Gak!" => saat diklik, kotak "kabur" = berpindah tempat (tidak nge-blur seluruh halaman)
+  freshGak.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // hitung perpindahan acak (px)
+    const rangeX = 180;
+    const rangeY = 80;
+    const randX = Math.floor(Math.random() * rangeX) - (rangeX / 2);
+    const randY = Math.floor(Math.random() * rangeY) - (rangeY / 2);
+    const rot = (Math.random() * 12) - 6; // rotasi kecil supaya terasa "kabur"
+
+    // pastikan animasi halus dan hanya mengubah transform pada elemen box
+    slideEmpat.style.transition = 'transform 0.45s cubic-bezier(.2,.8,.2,1)';
+    slideEmpat.style.transform = `translate(${randX}px, ${randY}px) rotate(${rot}deg)`;
+
+    // beri umpan balik pada tombol sendiri juga
+    freshGak.classList.add('animate__animated', 'animate__shakeX');
+    setTimeout(() => freshGak.classList.remove('animate__shakeX'), 600);
+
+    // kembalikan ke posisi asal setelah delay singkat
+    setTimeout(() => {
+      slideEmpat.style.transform = 'translate(0, 0) rotate(0deg)';
+    }, 700);
+
+    // jangan lanjut ke slide berikutnya — hanya efek gerak
   });
 
-  btn[1].addEventListener('click', function () {
-    slideEmpat.classList.replace('animate__fadeInDown', 'animate__bounceOut');
-    slideEmpat.classList.remove('animate__delay-2s');
-    setTimeout(function () {
-      slideEmpat.remove()
-      setTimeout(() => {
-        _slideLima();
-      }, 500);
-    }, 1000);
-  })
+  // tombol "Suka!!" => lanjut ke slide berikutnya (hanya dari sini boleh lanjut)
+  freshSuka.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // sembunyikan pertanyaan dan matikan kedua tombol
+    slideEmpat.classList.add('d-none');
+    freshGak.disabled = true;
+    freshSuka.disabled = true;
+    freshGak.style.pointerEvents = 'none';
+    freshSuka.style.pointerEvents = 'none';
+
+    // tampilkan slide lima (fungsi yang sudah ada) tapi pastikan trims cuma sekali
+    _slideLima();
+  }, { once: true });
 };
 
 const _slideLima = function () {
   const slideLima = document.getElementById('slideLima');
-  slideLima.classList.remove('d-none');
   const trims = document.getElementById('trims');
+  if (!slideLima) return;
 
-  setTimeout(() => {
+  slideLima.classList.remove('d-none');
+  slideLima.classList.add('animate__animated', 'animate__bounceIn');
+
+  // tampilkan teks terima kasih hanya sekali
+  if (trims && !window.trimsShown) {
+    window.trimsShown = true;
     trims.classList.remove('d-none');
-  }, 1000);
+    trims.innerText = 'MAKASIHHHH CAAAAA!';
+  }
 
-  slideLima.addEventListener('animationend', () => {
-    slideLima.classList.add('animate__delay-3s')
-    slideLima.classList.replace('animate__bounceIn', 'animate__fadeOut');
-    trims.classList.add('animate__animated', 'animate__fadeOut', 'animate__delay-3s');
-    setTimeout(() => {
-      trims.remove();
-      setTimeout(() => {
-        slideLima.remove();
-        _slideEnam();
-      }, 1000);
-    }, 6000);
-  });
+  // pastikan event animationend tidak menggandakan efek
+  const onEnd = () => {
+    slideLima.removeEventListener('animationend', onEnd);
+    // jika perlu aksi setelah anim selesai, taruh di sini
+  };
+  slideLima.addEventListener('animationend', onEnd);
 };
 
 const _slideEnam = function () {
@@ -213,15 +269,6 @@ new TypeIt("#teks2", {
   startDelay: 2000,
   speed: 30,
   waitUntilVisible: true
-}).go();
-
-
-new TypeIt("#trims", {
-  strings: ["Terimakasih."],
-  startDelay: 2000,
-  speed: 150,
-  loop: false,
-  waitUntilVisible: true,
 }).go();
 
 
@@ -494,4 +541,44 @@ function confetti() {
 
   if (!onlyOnKonami) poof();
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btnGak = document.getElementById('gak');
+  if (!btnGak) return;
+
+  // fungsi sederhana untuk memindahkan tombol secara acak (visual)
+  function moveGakRandom() {
+    const rangeX = 140; // lebar gerak horizontal (px)
+    const rangeY = 40;  // lebar gerak vertikal (px)
+    const x = Math.floor(Math.random() * rangeX) - (rangeX / 2);
+    const y = Math.floor(Math.random() * rangeY) - (rangeY / 2);
+    btnGak.style.transition = 'transform 0.18s ease';
+    btnGak.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  // gerakkan saat kursor masuk atau user coba touch
+  btnGak.addEventListener('mouseenter', (e) => {
+    if (!btnGak.disabled) moveGakRandom();
+  });
+  btnGak.addEventListener('touchstart', (e) => {
+    if (!btnGak.disabled) moveGakRandom();
+  }, { passive: true });
+
+  // opsi: terus bergerak tiap 2.5s selama belum diklik (bisa dihapus kalau tidak ingin)
+  let moveInterval = setInterval(() => {
+    if (btnGak.disabled) { clearInterval(moveInterval); return; }
+    moveGakRandom();
+  }, 2500);
+
+  // saat benar-benar diklik, hentikan perpindahan dan disable tombol
+  btnGak.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    btnGak.disabled = true;
+    btnGak.style.pointerEvents = 'none';
+    btnGak.style.transform = 'none';
+    clearInterval(moveInterval);
+    // bila perlu, lakukan aksi lain di sini (mis. feedback)
+  }, { once: true });
+});
 
